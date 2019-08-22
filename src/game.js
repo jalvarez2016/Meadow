@@ -33,8 +33,10 @@ setImagePath('./img');
 load(
   'back.png',
   'gBack.png',
+  'mBack.png',
   'floorAnim.png',
   'gFloorAnim.png',
+  'mFloorAnim.png',
   'bunAnim.png',
   'batAnim.png',
   'heartAnim.png',
@@ -102,8 +104,8 @@ load(
     animations: playerSheet.animations,
   });
 
-  let gFloorSheet = SpriteSheet({
-    image: imageAssets['gFloorAnim'],
+  let mFloorSheet = SpriteSheet({
+    image: imageAssets['mFloorAnim'],
     frameWidth: 8,
     frameHeight: 8,
     animations: {
@@ -113,6 +115,18 @@ load(
       }
     }
   });
+
+  let gFloorSheet = SpriteSheet({
+      image: imageAssets['gFloorAnim'],
+      frameWidth: 8,
+      frameHeight: 8,
+      animations: {
+        walk: {
+          frames: '0..1',
+          frameRate: 3
+        }
+      }
+    });
 
   let floorSheet = SpriteSheet({
     image: imageAssets['floorAnim'],
@@ -240,6 +254,11 @@ load(
           background.image = imageAssets['gBack'];
           floor.forEach( function(tile){
             tile.animations = gFloorSheet.animations;
+          });
+        } else if( points == 2 && bat.x < -19) {
+          background.image = imageAssets['mBack'];
+          floor.forEach( function(tile){
+            tile.animations = mFloorSheet.animations;
           });
         }
         console.log(points);
