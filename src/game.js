@@ -18,15 +18,11 @@ function gravity(thing){
   } else if(thing.y + grav.velocity >= canvas.height - 16){
     thing.y = canvas.height -16;
   }
-  // console.log(thing.y);
 };
 
 function gameOver(){
-  console.log("hello");
-  var c = document.getElementById("game");
-  var ctx = c.getContext("2d");
-  ctx.font = "30px Arial";
-  ctx.fillText("Hello World", 10, 50);
+  console.log("Game Over");
+  draw('Game Over', 4, 'red');
 }
 
 setImagePath('./img');
@@ -39,6 +35,7 @@ load(
   'mFloorAnim.png',
   'bunAnim.png',
   'batAnim.png',
+  'beastAnim.png',
   'heartAnim.png',
   'empAnim.png'
 ).then(function(assets) {
@@ -54,7 +51,7 @@ load(
     frameWidth: 8,
     frameHeight: 8,
     animations: {
-      // create a named animation: walk
+      // create a named animation: fly
       fly: {
         frames: '0..1',  // frames 0 through 9
         frameRate: 5
@@ -62,15 +59,39 @@ load(
     }
   });
 
-  let bat = Sprite({
-    x: 10,
-    y: Math.floor( Math.random() * (canvas.height - 32) ) + 16,
-    dx: 1.5,
-    width: 16,
-    height: 16,
-    anchor: {x: 0.5, y: 0.5},
-    animations: batSheet.animations,
+  let beastSheet = SpriteSheet({
+    image: imageAssets['beastAnim'],
+
+    frameWidth: 8,
+    frameHeight: 8,
+    animations: {
+      stomp: {
+        frames: '0..1',  // frames 0 through 9
+        frameRate: 5
+      }
+    }
   });
+
+  let enemies = [
+    Sprite({
+      x: 10,
+      y: Math.floor( Math.random() * (canvas.height - 32) ) + 16,
+      dx: 1.5,
+      width: 16,
+      height: 16,
+      anchor: {x: 0.5, y: 0.5},
+      animations: batSheet.animations,
+    }),
+    Sprite({
+      x: 10,
+      y: canvas.height - 24,
+      dx: 1,
+      width: 16,
+      height: 16,
+      anchor: {x: 0.5, y: 0.5},
+      animations: beastSheet.animations,
+    })
+  ]
 
   let background = Sprite({
     x: 0,
@@ -236,56 +257,51 @@ load(
       floor.forEach( function(tile){
         tile.update();
       });
-      bat.update();
+      enemies.forEach(function(enemy){
+        enemy.update();
+        // wrap the sprites position when it reaches
+        // the edge of the screen
+        if (enemy.x > canvas.width) {
+          enemy.x = -20;
+          if(enemy.animations.fly){
+            enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
+          }
+          points ++;
+          // Changes location depending on score
+          if(points == 1 && enemy.x < -19) {
+            background.image = imageAssets['gBack'];
+            floor.forEach( function(tile){
+              tile.animations = gFloorSheet.animations;
+            });
+          } else if( points == 2 && enemy.x < -19) {
+            background.image = imageAssets['mBack'];
+            floor.forEach( function(tile){
+              tile.animations = mFloorSheet.animations;
+            });
+          }
+          console.log('points', points);
+        }
+
+
+
+        // Bat collision detection
+
+        if( enemy.x - enemy.width/2 < player.x && enemy.x + enemy.width/2 > player.x - player.width ){
+          if( enemy.y - enemy.height/2 < player.y && enemy.y + enemy.height/2 > player.y - player.height){
+            let life = hits -1;
+            health[life].animations = empSheet.animations;
+            hits -= 1;
+            enemy.x = -20;
+            if(enemy.animations === batSheet.animations){
+              enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
+            };
+          }
+        }
+      });
       player.update();
 
       // Pushes player down like gravity
       gravity(player);
-      // console.log(bat.y);
-
-      // wrap the sprites position when it reaches
-      // the edge of the screen
-      if (bat.x > canvas.width) {
-        bat.x = -20;
-        bat.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
-        points ++;
-        // Changes location depending on score
-        if(points == 1 && bat.x < -19) {
-          background.image = imageAssets['gBack'];
-          floor.forEach( function(tile){
-            tile.animations = gFloorSheet.animations;
-          });
-        } else if( points == 2 && bat.x < -19) {
-          background.image = imageAssets['mBack'];
-          floor.forEach( function(tile){
-            tile.animations = mFloorSheet.animations;
-          });
-        }
-        console.log(points);
-      }
-
-
-
-      // Bat collision detection
-
-      if( bat.x - bat.width/2 < player.x && bat.x + bat.width/2 > player.x - player.width ){
-        if( bat.y - bat.height/2 < player.y && bat.y + bat.height/2 > player.y - player.height){
-          // console.log('y hit', bat.y, player.y);
-          let life = hits -1;
-          console.log(health[life].animations);
-          health[life].animations = empSheet.animations;
-          hits -= 1;
-          bat.x = -20;
-          bat.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
-          console.log(hits);
-        }
-      }
-
-      if(hits === 0){
-        loop.stop();
-        console.log(loop.isStopped);
-        gameOver();
-      }
 
       onPointerDown(function(e, object) {
         // handle pointer down
@@ -301,11 +317,17 @@ load(
       floor.forEach( function(tile){
         tile.render();
       });
-      bat.render();
+      enemies.forEach(function(enemy){
+        enemy.render();
+      });
       player.render();
       health.forEach(function(life){
         life.render();
-      })
+      });
+      if(hits === 0){
+        loop.stop();
+        gameOver();
+      }
     }
   });
 
