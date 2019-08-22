@@ -62,7 +62,7 @@ load(
 
   let bat = Sprite({
     x: 10,
-    y: Math.floor( Math.random() * canvas.height - 16 ) + 16,
+    y: Math.floor( Math.random() * (canvas.height - 32) ) + 16,
     dx: 1.5,
     width: 16,
     height: 16,
@@ -233,7 +233,7 @@ load(
       // the edge of the screen
       if (bat.x > canvas.width) {
         bat.x = -20;
-        bat.y = Math.floor( Math.random() * canvas.height - 24 ) + 24;
+        bat.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
         points ++;
         // Changes location depending on score
         if(points == 1 && bat.x < -19) {
@@ -257,7 +257,7 @@ load(
           health[life].animations = empSheet.animations;
           hits -= 1;
           bat.x = -20;
-          bat.y = Math.floor( Math.random() * canvas.height - 24 ) + 24;
+          bat.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
           console.log(hits);
         }
       }
