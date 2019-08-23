@@ -3,6 +3,7 @@ let { init, Sprite, GameLoop, load, setImagePath, imageAssets, SpriteSheet, init
 let { canvas } = init();
 initPointer();
 
+let start = false;
 let points = 0;
 let hits = 3;
 
@@ -21,8 +22,21 @@ function gravity(thing){
 };
 
 function gameOver(){
-  console.log("Game Over");
-  draw('Game Over', 4, 'red');
+  // console.log("Game Over");
+  draw('Game Over', 4, 'red', 50, 100);
+  draw('Points ' + points.toString(), 4, 'red', 65, 150);
+  draw('Click to try again', 2, 'black', 55, 200);
+}
+
+function end(){
+  // console.log("The End");
+  draw('A game made', 1.5, 'purple', 10, 10);
+  draw('by jAlvarez', 1.5, 'purple', 15, 20);
+}
+
+function begin(){
+  draw('Meadow', 4, 'yellow', 70, 100);
+  draw('click to start', 2, 'orange', 75, 220);
 }
 
 setImagePath('./img');
@@ -37,7 +51,9 @@ load(
   'batAnim.png',
   'beastAnim.png',
   'heartAnim.png',
-  'empAnim.png'
+  'empAnim.png',
+  'oScene.png',
+  'eScene.png'
 ).then(function(assets) {
 
   // all assets have loaded
@@ -250,83 +266,130 @@ load(
 
   let loop = GameLoop({  // create the main game loop
     update: function() { // update the game state
-      health.forEach( function(life){
-        life.update();
-      });
-      background.update();
-      floor.forEach( function(tile){
-        tile.update();
-      });
-      enemies.forEach(function(enemy){
-        enemy.update();
-        // wrap the sprites position when it reaches
-        // the edge of the screen
-        if (enemy.x > canvas.width) {
-          enemy.x = -20;
-          if(enemy.animations.fly){
-            enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
-          }
-          points ++;
-          // Changes location depending on score
-          if(points == 1 && enemy.x < -19) {
-            background.image = imageAssets['gBack'];
-            floor.forEach( function(tile){
-              tile.animations = gFloorSheet.animations;
-            });
-          } else if( points == 2 && enemy.x < -19) {
-            background.image = imageAssets['mBack'];
-            floor.forEach( function(tile){
-              tile.animations = mFloorSheet.animations;
-            });
-          }
-          console.log('points', points);
-        }
-
-
-
-        // Bat collision detection
-
-        if( enemy.x - enemy.width/2 < player.x && enemy.x + enemy.width/2 > player.x - player.width ){
-          if( enemy.y - enemy.height/2 < player.y && enemy.y + enemy.height/2 > player.y - player.height){
-            let life = hits -1;
-            health[life].animations = empSheet.animations;
-            hits -= 1;
+      if( !start ){
+        background.image = imageAssets['oScene'];
+          begin();
+      } else {
+        health.forEach( function(life){
+          life.update();
+        });
+        background.update();
+        floor.forEach( function(tile){
+          tile.update();
+        });
+        enemies.forEach(function(enemy){
+          enemy.update();
+          // wrap the sprites position when it reaches
+          // the edge of the screen
+          if (enemy.x > canvas.width) {
             enemy.x = -20;
-            if(enemy.animations === batSheet.animations){
+            if(enemy.animations.fly){
               enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
-            };
+            }
+            points ++;
+            // Changes location depending on score
+            if(points == 5 && enemy.x < -19) {
+              background.image = imageAssets['gBack'];
+              floor.forEach( function(tile){
+                tile.animations = gFloorSheet.animations;
+              });
+            } else if( points == 10 && enemy.x < -19) {
+              background.image = imageAssets['mBack'];
+              floor.forEach( function(tile){
+                tile.animations = mFloorSheet.animations;
+              });
+            } else if( points == 15 && enemy.x < -19) {
+              background.image = imageAssets['eScene'];
+              end();
+              player.width = 0;
+              enemies.forEach(function(en){
+                en.width = 0;
+                en.dx = 0;
+              })
+              floor.forEach( function(tile){
+                tile.width = 0;
+                tile.height = 0; //line not nessesary
+              });
+              health.forEach(function(life){
+                life.width = 0;
+                life.height = 0; //line not nessesary
+              });
+            }
+            console.log('points', points); //line not nessesary
           }
-        }
-      });
-      player.update();
 
-      // Pushes player down like gravity
-      gravity(player);
+
+
+          // Bat collision detection
+
+          if( enemy.x - enemy.width/2 < player.x && enemy.x + enemy.width/2 > player.x - player.width ){
+            if( enemy.y - enemy.height/2 < player.y && enemy.y + enemy.height/2 > player.y - player.height){
+              let life = hits -1;
+              health[life].animations = empSheet.animations;
+              hits -= 1;
+              enemy.x = -20;
+              if(enemy.animations.fly ){
+                enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
+              } else {
+                enemy.dx = Math.floor( Math.random() * 2) + .5;
+                console.log(enemy);
+              };
+            }
+          }
+        });
+        player.update();
+
+        // Pushes player down like gravity
+        gravity(player);
+      }
 
       onPointerDown(function(e, object) {
-        // handle pointer down
+        // Starts game
+        if(!start){
+          start = true;
+          background.image = imageAssets['back'];
+        }
+        // Restart after dying
+        if(hits === 0){
+          hits = 3;
+          loop.start();
+          health.forEach(function(life){
+            life.animations = healthSheet.animations;
+          });
+        }
+
+        // gravity logic
         if( player.y - grav.velocity > canvas.height -50 ){
           grav.velocity = -8;
           player.y += grav.velocity;
         }
       });
 
+
     },
     render: function() { // render the game state
-      background.render();
-      floor.forEach( function(tile){
-        tile.render();
-      });
-      enemies.forEach(function(enemy){
-        enemy.render();
-      });
-      player.render();
-      health.forEach(function(life){
-        life.render();
-      });
-      if(hits === 0){
-        loop.stop();
-        gameOver();
+      if(!start){
+        background.render();
+        begin();
+      } else {
+        background.render();
+        floor.forEach( function(tile){
+          tile.render();
+        });
+        enemies.forEach(function(enemy){
+          enemy.render();
+        });
+        player.render();
+        health.forEach(function(life){
+          life.render();
+        });
+        if(hits === 0){
+          loop.stop();
+          gameOver();
+        } else if(points==3){
+          end();
+          loop.stop();
+        }
       }
     }
   });
