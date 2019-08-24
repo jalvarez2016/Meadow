@@ -3,6 +3,98 @@ let { init, Sprite, GameLoop, load, setImagePath, imageAssets, SpriteSheet, init
 let { canvas } = init();
 initPointer();
 
+function jump(){
+  var j = [
+    'C6 e',
+  ];
+  var ac = typeof AudioContext !== 'undefined' ? new AudioContext : new webkitAudioContext;
+  // set the playback tempo (120 beats per minute)
+  var tempo = 120;
+
+  j = new TinyMusic.Sequence( ac, tempo, j );
+  j.loop = false;
+  j.smoothing = .1;
+  j.play();
+}
+
+function ost(scene){
+  var playing = [
+        'C5 h',
+        'D5 q',
+        'E5 q',
+        'D5 q',
+        'C5 q',
+        'B4 q',
+        'C5 q',
+        'D5 h',
+        'E5 q',
+        'D5 q',
+        'E5 q',
+        'F5 q',
+        'E5 e',
+        'D5 e',
+
+  ];
+  var end = [
+    '-   e',
+    'D5  e',
+    'E5  e',
+    'D5  e',
+    'Cb4 e',
+    'C5  e',
+    'B4  e',
+    'Gb4 e',
+
+    'D4  e',
+    'C4  e',
+    'Fb4 e',
+    'E4  e',
+    'G4  e',
+    'F4  e',
+    'E4  q',
+
+    '-   e',
+    'D5  e',
+    'E5  e',
+    'D5  e',
+    'Cb4 e',
+    'C5  e',
+    'B4  e',
+    'Gb4 e',
+
+    'D4  e',
+    'C4  e',
+    'Fb4 e',
+    'E4  e',
+    'G4  e',
+    'F4  e',
+    'E4  q'
+
+  ];
+  if(scene == 'game'){
+    // create a new Web Audio API context
+    var ac = typeof AudioContext !== 'undefined' ? new AudioContext : new webkitAudioContext;
+    // set the playback tempo (120 beats per minute)
+    var tempo = 120;
+
+    sequence1 = new TinyMusic.Sequence( ac, tempo, playing );
+    sequence1.loop = true;
+    sequence1.smoothing = .1;
+    sequence1.play();
+  } else if(scene == 'end'){
+    sequence1.stop();
+    // create a new Web Audio API context
+    var ac = typeof AudioContext !== 'undefined' ? new AudioContext : new webkitAudioContext;
+
+    // set the playback tempo (120 beats per minute)
+    var tempo = 120;
+    end = new TinyMusic.Sequence( ac, tempo, end );
+    end.loop = true;
+    end.smoothing = .1;
+    end.play();
+  }
+}
+
 let start = false;
 let points = 0;
 let hits = 3;
@@ -22,14 +114,12 @@ function gravity(thing){
 };
 
 function gameOver(){
-  // console.log("Game Over");
   draw('Game Over', 4, 'red', 50, 100);
   draw('Points ' + points.toString(), 4, 'red', 65, 150);
   draw('Click to try again', 2, 'black', 55, 200);
 }
 
 function end(){
-  // console.log("The End");
   draw('A game made', 1.5, 'purple', 10, 10);
   draw('by jAlvarez', 1.5, 'purple', 15, 20);
 }
@@ -57,9 +147,6 @@ load(
 ).then(function(assets) {
 
   // all assets have loaded
-  for( var i = 0; i<assets.length; i++){
-    console.log(assets[i].src);
-  }
 
   let batSheet = SpriteSheet({
     image: imageAssets['batAnim'],
@@ -91,8 +178,17 @@ load(
   let enemies = [
     Sprite({
       x: 10,
-      y: Math.floor( Math.random() * (canvas.height - 32) ) + 16,
-      dx: 1.5,
+      y: Math.floor( Math.random() * (canvas.height - 50) ) + 16,
+      dx: 2,
+      width: 16,
+      height: 16,
+      anchor: {x: 0.5, y: 0.5},
+      animations: batSheet.animations,
+    }),
+    Sprite({
+      x: 30,
+      y: Math.floor( Math.random() * (canvas.height - 50) ) + 16,
+      dx: 2.5,
       width: 16,
       height: 16,
       anchor: {x: 0.5, y: 0.5},
@@ -268,7 +364,7 @@ load(
     update: function() { // update the game state
       if( !start ){
         background.image = imageAssets['oScene'];
-          begin();
+        begin();
       } else {
         health.forEach( function(life){
           life.update();
@@ -284,21 +380,21 @@ load(
           if (enemy.x > canvas.width) {
             enemy.x = -20;
             if(enemy.animations.fly){
-              enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
+              enemy.y = Math.floor( Math.random() * (canvas.height - 50) ) + 16;
             }
             points ++;
             // Changes location depending on score
-            if(points == 5 && enemy.x < -19) {
+            if(points == 10 && enemy.x < -19) {
               background.image = imageAssets['gBack'];
               floor.forEach( function(tile){
                 tile.animations = gFloorSheet.animations;
               });
-            } else if( points == 10 && enemy.x < -19) {
+            } else if( points == 20 && enemy.x < -19) {
               background.image = imageAssets['mBack'];
               floor.forEach( function(tile){
                 tile.animations = mFloorSheet.animations;
               });
-            } else if( points == 15 && enemy.x < -19) {
+            } else if( points == 30 && enemy.x < -19) {
               background.image = imageAssets['eScene'];
               end();
               player.width = 0;
@@ -329,10 +425,9 @@ load(
               hits -= 1;
               enemy.x = -20;
               if(enemy.animations.fly ){
-                enemy.y = Math.floor( Math.random() * (canvas.height - 32) ) + 16;
+                enemy.y = Math.floor( Math.random() * (canvas.height - 50) ) + 16;
               } else {
-                enemy.dx = Math.floor( Math.random() * 2) + .5;
-                console.log(enemy);
+                enemy.dx = Math.floor( Math.random() * 1.5) + 1;
               };
             }
           }
@@ -348,10 +443,16 @@ load(
         if(!start){
           start = true;
           background.image = imageAssets['back'];
+          ost('game');
         }
         // Restart after dying
         if(hits === 0){
           hits = 3;
+          points = 0;
+          background.image = imageAssets['back'];
+          floor.forEach(function(tile){
+            tile.animations = floorSheet.animations;
+          });
           loop.start();
           health.forEach(function(life){
             life.animations = healthSheet.animations;
@@ -362,6 +463,7 @@ load(
         if( player.y - grav.velocity > canvas.height -50 ){
           grav.velocity = -8;
           player.y += grav.velocity;
+          jump();
         }
       });
 
@@ -385,9 +487,13 @@ load(
         });
         if(hits === 0){
           loop.stop();
+          enemies.forEach(function(enemy){
+            enemy.x = -20;
+          });
           gameOver();
-        } else if(points==3){
+        } else if(points==30){
           end();
+          ost('end');
           loop.stop();
         }
       }
@@ -396,6 +502,5 @@ load(
 
 loop.start();    // start the game
 }).catch(function(err) {
-  // error loading an asset
-  console.log(err);
+
 });
